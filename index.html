@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+<canvas id="screen" width="100" height="100"></canvas>
+<script>
+    var stopped = false;
+    var addForce = false;
+    var addForceX = 0;
+    var addForceY = 0;
+    var screenCtx;
+    var img;
+    var scale;
+    var body = { // it's a rigid body
+        positionX: 1,
+        positionY: 30,
+        velocityX: 0,
+        velocityY: 0,
+        accelerationX: 0,
+        accelerationY: 0,
+        mass: 0.05, // kg
+        dragCoefficient: 0.47,
+        area: 0.0015,
+        width: 0.2,
+        height: 0.2,
+        radius: 0.022
+    };
+    var bodyV = { // it's a rigid body
+        positionX: 1,
+        positionY: 30,
+        velocityX: 0,
+        velocityY: 0,
+        accelerationX: 0,
+        accelerationY: 0,
+        mass: 0.05, // kg
+        dragCoefficient: 0.47,
+        area: 0.0015,
+        width: 0.2,
+        height: 0.2,
+        radius: 0.022
+    };
+    var timeStep = 1 / 60; // 60fps
+
+//    body.accelerationX = 100 / body.mass; // newton
+//    body.accelerationY = -50 / body.mass; // newton
+
+    window.onload = function () {
+        var screen = document.getElementById('screen');
+        screen.width = window.innerWidth;
+        scale = Math.floor(screen.width / 100);
+        screen.height = window.innerHeight;
+        screenCtx = screen.getContext('2d');
+        img = new Image();
+        img.onload = function () {
+            loop();
+        };
+        img.src = 'mortar-48.png';
+    };
+
+    function loop() {
+//        console.log('loop');
+
+        if (!stopped) {
+            window.requestAnimationFrame(loop);
+        }
+        var forceX = 0;
+        var forceY = 0;
+
+        //############
+        if (addForce) {
+            forceX += addForceX;
+            forceY += addForceY;
+
+            addForceX = 0;
+            addForceY = 0;
+            addForce = false;
+        }
+
+        /* Weight force, which only affects the y-direction (because that's the direction gravity points). */
+        forceY += body.mass * 9.81;
+
+        /* Air resistance force; this would affect both x- and y-directions, but we're only looking at the y-axis in this example. */
+
+        forceX += -1 * 0.5 * 1.2 * body.dragCoefficient * body.area * body.velocityX * body.velocityX;
+        forceX = Math.round(forceX * 100) / 100;
+        forceY += -1 * 0.5 * 1.2 * body.dragCoefficient * body.area * body.velocityY * body.velocityY;
+        forceY = Math.round(forceY * 100) / 100;
+
+        //############
+
+
+        body.accelerationX = forceX / body.mass;
+        body.velocityX += body.accelerationX * timeStep;
+        body.velocityX = Math.round(body.velocityX * 100) / 100;
+
+//        if (body.positionX * scale + 150 > screen.width || body.positionX <= 0) {
+//            body.velocityX = 0;
+//        }
+
+        body.positionX += body.velocityX * timeStep;
+        body.positionX = Math.round(body.positionX * 100) / 100;
+
+        body.accelerationY = forceY / body.mass;
+        body.velocityY += body.accelerationY * timeStep;
+        body.velocityY = Math.round(body.velocityY * 100) / 100;
+
+//        if (body.positionY * scale + 150 > screen.height || body.positionY <= 0) {
+//            body.velocityY = 0;
+//        }
+
+        body.positionY += body.velocityY * timeStep;
+        body.positionY = Math.round(body.positionY * 100) / 100;
+
+
+        var last_accX = bodyV.accelerationX;
+        bodyV.positionX += bodyV.velocityX * timeStep + (0.5 * last_accX * timeStep * timeStep);
+        bodyV.positionX = Math.round(bodyV.positionX * 100) / 100;
+        bodyV.accelerationX = forceX / bodyV.mass;
+        var avg_accX = (last_accX + bodyV.accelerationX) / 2;
+        bodyV.velocityX += avg_accX * timeStep;
+        bodyV.velocityX = Math.round(bodyV.velocityX * 100) / 100;
+
+        var last_accY = bodyV.accelerationY;
+        bodyV.positionY += bodyV.velocityY * timeStep + (0.5 * last_accY * timeStep * timeStep);
+        bodyV.positionY = Math.round(bodyV.positionY * 100) / 100;
+        bodyV.accelerationY = forceY / bodyV.mass;
+        var avg_accY = (last_accY + bodyV.accelerationY) / 2;
+        bodyV.velocityY += avg_accY * timeStep;
+        bodyV.velocityY = Math.round(bodyV.velocityY * 100) / 100;
+
+        //draw
+        screenCtx.drawImage(img,
+                Math.floor(body.positionX * scale),
+                Math.floor(body.positionY * scale),
+                Math.floor(body.width * scale),
+                Math.floor(body.height * scale));
+
+        screenCtx.drawImage(img,
+                Math.floor(bodyV.positionX * scale),
+                Math.floor(bodyV.positionY * scale),
+                Math.floor(bodyV.width * scale),
+                Math.floor(bodyV.height * scale));
+    }
+
+</script>
+
+</body>
+</html>
